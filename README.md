@@ -1,5 +1,4 @@
-# Delhi NCR AQI Control Dashboard — Design README (v2, 3-Column Layout)
-
+# Delhi NCR AQI Control Dashboard 
 **Designed as:** a government operations console (CPCB / state pollution control board / disaster management use) — not a consumer weather app. Structured as two views, matching how an operator actually works: a live spatial overview first, detailed analytics on demand.
 
 **Design philosophy:** visualization-first, text-minimal. Every number should be readable in under 2 seconds. Controls, the map, and live data never compete for the same space — each has its own column.
