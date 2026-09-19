@@ -24,12 +24,16 @@ import {
   Sparkles,
   X,
   Search,
-  RotateCcw
+  RotateCcw,
+  Cpu,
+  Database
 } from 'lucide-react';
 import {
   ResponsiveContainer,
   AreaChart,
   Area,
+  LineChart,
+  Line,
   XAxis,
   YAxis,
   Tooltip,
@@ -42,8 +46,6 @@ export default function VayuCommandDashboard() {
   const [searchQuery, setSearchQuery] = useState('');
   const [mapStyle, setMapStyle] = useState('Standard');
   const [timeHorizon, setTimeHorizon] = useState('Live');
-  const [actionsTriggered, setActionsTriggered] = useState({});
-  const [actionLog, setActionLog] = useState([]);
   const [downloadNotice, setDownloadNotice] = useState(false);
   const [isStationsPanelOpen, setIsStationsPanelOpen] = useState(true);
 
@@ -86,6 +88,17 @@ export default function VayuCommandDashboard() {
     { id: "FIRE-104", lat: 29.12, lng: 76.82, frp: 62, biomass: "5.5 Tonnes", pm25_rate: "0.21 kg/s", time: "11:25 IST", dist: "54 km NW (Sonipat)" },
   ];
 
+  // 7-Day Model Training Analytics Dataset
+  const modelTrainingData = [
+    { day: 'Day 1 (Oct 9)', loss: 48.2, accuracy: 72.4, mae: 32.1, valLoss: 52.4, dataVolumeGB: 1250, epochs: 35, pearsonR: 0.724 },
+    { day: 'Day 2 (Oct 10)', loss: 36.5, accuracy: 79.1, mae: 24.8, valLoss: 40.1, dataVolumeGB: 1380, epochs: 70, pearsonR: 0.791 },
+    { day: 'Day 3 (Oct 11)', loss: 27.8, accuracy: 84.6, mae: 19.4, valLoss: 31.2, dataVolumeGB: 1410, epochs: 105, pearsonR: 0.846 },
+    { day: 'Day 4 (Oct 12)', loss: 21.4, accuracy: 88.9, mae: 15.6, valLoss: 24.8, dataVolumeGB: 1390, epochs: 140, pearsonR: 0.889 },
+    { day: 'Day 5 (Oct 13)', loss: 17.1, accuracy: 91.5, mae: 13.2, valLoss: 19.6, dataVolumeGB: 1450, epochs: 175, pearsonR: 0.915 },
+    { day: 'Day 6 (Oct 14)', loss: 14.3, accuracy: 93.2, mae: 11.8, valLoss: 16.4, dataVolumeGB: 1420, epochs: 210, pearsonR: 0.932 },
+    { day: 'Day 7 (Oct 15)', loss: 12.4, accuracy: 94.8, mae: 10.5, valLoss: 14.1, dataVolumeGB: 1500, epochs: 250, pearsonR: 0.948 },
+  ];
+
   // Filtered Hotspots based on search query
   const filteredHotspots = hotspots.filter(st =>
     st.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -107,13 +120,6 @@ export default function VayuCommandDashboard() {
       Radiation: Math.round(700 * Math.max(0, Math.sin((i - 2) / 3))),
     };
   });
-
-  // Action Items Handler
-  const handleAction = (id, name, stage) => {
-    setActionsTriggered(prev => ({ ...prev, [id]: true }));
-    const logItem = `[${new Date().toLocaleTimeString('en-IN')}] Triggered ${stage}: ${name}`;
-    setActionLog(prev => [logItem, ...prev]);
-  };
 
   const handlePrint = () => {
     window.print();
@@ -375,7 +381,7 @@ export default function VayuCommandDashboard() {
             { id: 'gis', label: '1. Live Air Map & Stations', icon: Compass },
             { id: 'telemetry', label: '2. 72h Pollution Forecast', icon: BarChart2 },
             { id: 'stubble', label: '3. Stubble Burning & Fire Impact', icon: Flame },
-            { id: 'grap', label: '4. Clean Air Actions & Directives', icon: ShieldAlert },
+            { id: 'grap', label: '4. Model Training & 7-Day Performance', icon: Activity },
             { id: 'feedback', label: '5. Aerosol Coupling Research', icon: RefreshCw },
           ].map(tab => {
             const Icon = tab.icon;
@@ -686,76 +692,196 @@ export default function VayuCommandDashboard() {
           </div>
         </div>
 
-        {/* TAB 4: CLEAN AIR ACTIONS & DIRECTIVES */}
+        {/* TAB 4: MODEL TRAINING & 7-DAY PERFORMANCE ANALYTICS */}
         <div className={`flex-1 min-h-0 bg-white border border-slate-200 rounded-xl p-3 flex flex-col h-full overflow-hidden shadow-2xs ${activeTab === 'grap' ? '' : 'hidden'}`}>
+          
+          {/* Header Bar */}
           <div className="flex-none flex items-center justify-between pb-1.5 border-b border-slate-200">
             <div>
               <h3 className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
-                <ShieldAlert className="w-3.5 h-3.5 text-red-600" />
-                Clean Air Actions & Statutory Emergency Directives (GRAP)
+                <Activity className="w-3.5 h-3.5 text-emerald-600" />
+                WRF-Chem ML Model Training & 7-Day Performance Analytics
               </h3>
-              <p className="text-[10px] text-slate-500">Statutory emergency air pollution mitigation controls</p>
+              <p className="text-[10px] text-slate-500">Continuous 7-day model convergence, validation loss, and feature weight progression</p>
             </div>
-            <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-red-50 text-red-700 border border-red-200">
-              STAGE IV ACTIVE
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-[9.5px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
+                <Check className="w-3 h-3 text-emerald-600" />
+                <span>MODEL CONVERGED (250 EPOCHS)</span>
+              </span>
+            </div>
           </div>
 
-          <div className="flex-1 min-h-0 overflow-y-auto space-y-2 mt-2 pr-0.5">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2.5">
-              {[
-                { id: 'act-1', name: 'Ban Non-Essential Truck Entry', stage: 'Stage IV', desc: 'Restrict heavy diesel truck entry into Delhi except essential commodities.' },
-                { id: 'act-2', name: 'Anti-Smog Water Sprinkling', stage: 'Stage III', desc: 'Deploy high-pressure mist cannons along 13 designated hotspots.' },
-                { id: 'act-3', name: 'Halt Construction Work', stage: 'Stage III', desc: 'Stop linear public works, earth digging, and brick kilns.' },
-                { id: 'act-4', name: 'Enforce Odd-Even Traffic', stage: 'Stage IV', desc: 'Restrict passenger car movements based on registration numbers.' },
-              ].map((act) => {
-                const isDone = actionsTriggered[act.id];
-                return (
-                  <div key={act.id} className="p-2.5 rounded-lg bg-slate-50 border border-slate-200 flex flex-col justify-between space-y-1.5">
-                    <div>
-                      <span className="text-[8.5px] font-bold px-1 py-0.2 rounded bg-red-100 text-red-700 border border-red-200">
-                        {act.stage}
-                      </span>
-                      <h4 className="text-[11.5px] font-bold text-slate-900 mt-1">{act.name}</h4>
-                      <p className="text-[9.5px] text-slate-500 mt-0.5">{act.desc}</p>
-                    </div>
+          <div className="flex-1 min-h-0 overflow-y-auto space-y-2.5 mt-2 pr-0.5">
+            
+            {/* Top KPI Cards Row */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+              <div className="p-2 rounded-lg bg-emerald-50/60 border border-emerald-200">
+                <div className="text-[10px] text-emerald-800 font-semibold flex items-center gap-1">
+                  <TrendingUp className="w-3 h-3 text-emerald-600" />
+                  <span>Validation Accuracy</span>
+                </div>
+                <div className="text-lg font-black text-emerald-700 mt-0.5">94.8%</div>
+                <div className="text-[9px] text-emerald-600 font-medium">+22.4% gain across 7 days</div>
+              </div>
 
-                    <button
-                      onClick={() => handleAction(act.id, act.name, act.stage)}
-                      disabled={isDone}
-                      className={`w-full py-1 rounded-md text-[11px] font-bold transition-all flex items-center justify-center gap-1 cursor-pointer ${
-                        isDone
-                          ? 'bg-emerald-100 text-emerald-800 border border-emerald-300 cursor-default'
-                          : 'btn-emerald'
-                      }`}
-                    >
-                      {isDone ? (
-                        <>
-                          <Check className="w-3 h-3 text-emerald-700" />
-                          <span>Action Enforced</span>
-                        </>
-                      ) : (
-                        <>
-                          <Zap className="w-3 h-3" />
-                          <span>Enforce Action</span>
-                        </>
-                      )}
-                    </button>
-                  </div>
-                );
-              })}
+              <div className="p-2 rounded-lg bg-slate-50 border border-slate-200">
+                <div className="text-[10px] text-slate-600 font-semibold flex items-center gap-1">
+                  <Activity className="w-3 h-3 text-blue-600" />
+                  <span>Final Training Loss (RMSE)</span>
+                </div>
+                <div className="text-lg font-black text-slate-900 mt-0.5">12.4 µg/m³</div>
+                <div className="text-[9px] text-emerald-600 font-medium">-74.3% error drop from Day 1</div>
+              </div>
+
+              <div className="p-2 rounded-lg bg-slate-50 border border-slate-200">
+                <div className="text-[10px] text-slate-600 font-semibold flex items-center gap-1">
+                  <Database className="w-3 h-3 text-purple-600" />
+                  <span>7-Day Data Ingested</span>
+                </div>
+                <div className="text-lg font-black text-purple-700 mt-0.5">9.81 TB</div>
+                <div className="text-[9px] text-slate-500 font-medium">48,000 grid points/hr stream</div>
+              </div>
+
+              <div className="p-2 rounded-lg bg-slate-50 border border-slate-200">
+                <div className="text-[10px] text-slate-600 font-semibold flex items-center gap-1">
+                  <Cpu className="w-3 h-3 text-amber-600" />
+                  <span>Distributed Hardware</span>
+                </div>
+                <div className="text-lg font-black text-amber-700 mt-0.5">8x A100 GPUs</div>
+                <div className="text-[9px] text-slate-500 font-medium">Distributed PyTorch / WRF-Chem</div>
+              </div>
             </div>
 
-            {actionLog.length > 0 && (
-              <div className="p-2.5 rounded-lg bg-slate-900 text-white space-y-1 shadow-2xs">
-                <h4 className="text-[10.5px] font-bold text-slate-300">Enforcement Audit Log:</h4>
-                <div className="space-y-0.5 font-mono text-[9.5px] text-emerald-400 max-h-20 overflow-y-auto">
-                  {actionLog.map((log, idx) => (
-                    <div key={idx}>{log}</div>
-                  ))}
+            {/* Main Graphs & Basis Breakdown Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-2.5">
+              
+              {/* 7-Day Loss & Accuracy Graph */}
+              <div className="lg:col-span-7 bg-slate-50/70 border border-slate-200 rounded-xl p-2.5 flex flex-col">
+                <div className="flex items-center justify-between pb-1 mb-1 border-b border-slate-200">
+                  <h4 className="text-[11px] font-bold text-slate-900 flex items-center gap-1">
+                    <BarChart2 className="w-3 h-3 text-emerald-600" />
+                    <span>7-Day Loss Decay & Accuracy Progression Curve</span>
+                  </h4>
+                  <div className="flex items-center gap-2 text-[10px] font-semibold">
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-emerald-600"></span>Accuracy (%)</span>
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-rose-600"></span>Loss (RMSE)</span>
+                  </div>
+                </div>
+
+                <div className="h-44 w-full pt-1">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={modelTrainingData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                      <XAxis dataKey="day" stroke="#64748b" fontSize={9.5} />
+                      <YAxis yAxisId="left" stroke="#10b981" fontSize={9.5} domain={[60, 100]} />
+                      <YAxis yAxisId="right" orientation="right" stroke="#e11d48" fontSize={9.5} domain={[0, 60]} />
+                      <Tooltip contentStyle={{ backgroundColor: '#ffffff', borderColor: '#e2e8f0', borderRadius: '6px', fontSize: '10px' }} />
+                      <Line yAxisId="left" type="monotone" dataKey="accuracy" stroke="#10b981" strokeWidth={2.5} dot={{ r: 3 }} name="Accuracy (%)" />
+                      <Line yAxisId="right" type="monotone" dataKey="loss" stroke="#e11d48" strokeWidth={2} dot={{ r: 3 }} name="Train Loss (RMSE)" />
+                      <Line yAxisId="right" type="monotone" dataKey="valLoss" stroke="#a855f7" strokeWidth={1.5} strokeDasharray="4 4" name="Val Loss" />
+                    </LineChart>
+                  </ResponsiveContainer>
                 </div>
               </div>
-            )}
+
+              {/* Basis of Model Training (Feature Importance Share) */}
+              <div className="lg:col-span-5 bg-slate-50/70 border border-slate-200 rounded-xl p-2.5 flex flex-col justify-between">
+                <div>
+                  <h4 className="text-[11px] font-bold text-slate-900 pb-1 mb-2 border-b border-slate-200 flex items-center gap-1">
+                    <Compass className="w-3 h-3 text-emerald-600" />
+                    <span>Basis of Model Training (Feature Weight Share)</span>
+                  </h4>
+
+                  <div className="space-y-2 text-[10.5px]">
+                    <div>
+                      <div className="flex justify-between text-slate-700 font-semibold">
+                        <span>1. VIIRS Satellite FRP & Biomass Flux</span>
+                        <span className="font-bold text-orange-600">34.2%</span>
+                      </div>
+                      <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden mt-0.5">
+                        <div className="bg-orange-500 h-full w-[34.2%]" />
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="flex justify-between text-slate-700 font-semibold">
+                        <span>2. Boundary Layer Met (PBLH, Wind, T2 Inversion)</span>
+                        <span className="font-bold text-blue-600">28.5%</span>
+                      </div>
+                      <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden mt-0.5">
+                        <div className="bg-blue-600 h-full w-[28.5%]" />
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="flex justify-between text-slate-700 font-semibold">
+                        <span>3. WRF-Chem Chemistry Baseline (NO₂, SO₂, O₃)</span>
+                        <span className="font-bold text-purple-600">21.8%</span>
+                      </div>
+                      <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden mt-0.5">
+                        <div className="bg-purple-600 h-full w-[21.8%]" />
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="flex justify-between text-slate-700 font-semibold">
+                        <span>4. Sectoral Emission Inventory (Traffic, Industry, Dust)</span>
+                        <span className="font-bold text-amber-600">15.5%</span>
+                      </div>
+                      <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden mt-0.5">
+                        <div className="bg-amber-500 h-full w-[15.5%]" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-1.5 rounded bg-emerald-50 border border-emerald-200 text-[10px] text-emerald-800 font-medium flex items-center gap-1.5 mt-2">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                  <span>Gradient Boosting & WRF-Chem 2-Way Feedback Tensor Verified</span>
+                </div>
+              </div>
+            </div>
+
+            {/* 7-Day Epoch Breakdown Table */}
+            <div className="pt-1">
+              <h4 className="text-[11px] font-bold text-slate-900 mb-1">7-Day Daily Model Epoch & Parameter Log</h4>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-[10.5px]">
+                  <thead>
+                    <tr className="border-b border-slate-200 text-slate-500 uppercase text-[9px] font-semibold">
+                      <th className="pb-1">Training Period</th>
+                      <th className="pb-1">Epochs</th>
+                      <th className="pb-1">Volume (GB)</th>
+                      <th className="pb-1">Train Loss (RMSE)</th>
+                      <th className="pb-1">Val Loss</th>
+                      <th className="pb-1">MAE (µg/m³)</th>
+                      <th className="pb-1">Pearson R</th>
+                      <th className="pb-1">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 font-mono text-[10px]">
+                    {modelTrainingData.map((row, idx) => (
+                      <tr key={idx} className="hover:bg-slate-50">
+                        <td className="py-1 font-bold text-slate-900">{row.day}</td>
+                        <td className="py-1 text-slate-700">{row.epochs} / 250</td>
+                        <td className="py-1 text-slate-700">{row.dataVolumeGB} GB</td>
+                        <td className="py-1 text-rose-600 font-bold">{row.loss}</td>
+                        <td className="py-1 text-purple-600">{row.valLoss}</td>
+                        <td className="py-1 text-slate-700">{row.mae}</td>
+                        <td className="py-1 text-emerald-600 font-bold">{row.pearsonR}</td>
+                        <td className="py-1">
+                          <span className={`text-[8.5px] font-bold px-1.5 py-0.2 rounded ${idx === 6 ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-700'}`}>
+                            {idx === 6 ? 'CONVERGED' : 'OPTIMIZING'}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
           </div>
         </div>
 
